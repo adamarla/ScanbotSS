@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="jar">
+    <!--Auto generated ant build file-->
+    <property environment="env"/>
+    <property name="project.base.dir" value="."/>
+    <property name="name" value="ScanbotSS"/>
+    <property name="src" value="${project.base.dir}/src"/>
+    <property name="build" value="${project.base.dir}/build"/>
+    <property name="lib" value="${project.base.dir}/lib"/>
+    <property value="" name="jars.ok"/>
+    <path id="class.path">
+        <pathelement path="${java.class.path}"/>
+        <fileset dir="${lib}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+    <target name="init">
+        <mkdir dir="${build}"/>
+        <mkdir dir="${build}/classes"/>
+        <mkdir dir="${build}/lib"/>
+    </target>
+    <target depends="init" name="pre.compile.test">
+        <!--Test the classpath for the availability of necesary classes-->
+        <available classpathref="class.path" property="zxing.available" classname="com.google.zxing.Result"/>
+        <condition property="jars.ok">
+            <isset property="axis2.available"/>
+        </condition>
+        <!--Print out the availabilities-->
+        <echo message="ZXing Availability= ${zxing.available}"/>
+    </target>
+    <target depends="pre.compile.test" name="compile.src" if="jars.ok">
+        <javac debug="on" memoryMaximumSize="256m" memoryInitialSize="256m" fork="true" 
+        	destdir="${build}/classes" srcdir="${src}">
+            <classpath refid="class.path"/>
+        </javac>
+    </target>
+	  <target depends="compile.src" name="jar">
+	  	  <jar destfile="${build}/lib/ScanbotSS.jar">
+	  	  	  <fileset dir="${build}/classes"/>
+	  	  </jar>
+        <copy toDir="${build}/lib" failonerror="false">
+            <fileset dir="${lib}">
+                <include name="*.jar"/>
+            </fileset>        	
+        </copy>
+	  </target>
+	  <target name="zip" depends="jar">
+	  	  <zip destfile="${project.base.dir}/ScanbotSS.zip">
+	  	  	  <fileset dir="${build}/lib"/>
+	  	  </zip>
+	  </target>
+    <target depends="pre.compile.test" name="echo.classpath.problem" unless="jars.ok">
+        <echo message="The class path is not set right! Please make sure zxing jars are in the classpath"/>
+    </target>
+    <target name="clean">
+        <delete dir="${build}"/>
+    </target>
+</project>
