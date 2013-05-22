@@ -1,13 +1,16 @@
 package gutenberg.collect;
 
-
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Calendar;
 import java.util.Hashtable;
+import java.util.Locale;
 
 import javax.imageio.ImageIO;
 
@@ -41,19 +44,30 @@ public class ScanbotSS {
         UNEXPLODED = ".ue", UNDETECTED = ".ud", BACKED_UP = ".bk",
         CROPPED = ".33", WORKING = ".wk";
 
-    public ScanbotSS(Path bankRoot) {
-        this.staging = bankRoot.resolve("staging");
-        this.scantray = bankRoot.resolve("scantray");
+    public ScanbotSS(Path bankroot) {
+        this.bankroot = bankroot;
+        this.staging = bankroot.resolve("staging");
+        this.scantray = bankroot.resolve("scantray");
+        this.locker = bankroot.resolve("locker");
     }
 
     public void run(boolean backup) throws Exception {
         
         clearTempFiles();
+
+        explode(backup);
+        
+        detect();
+        
+        update();
+    }
+
+    private void explode(boolean backup) throws Exception {
         
         DirectoryStream<Path> stream = 
             Files.newDirectoryStream(scantray, "*" + UNEXPLODED);
         Path backupPath = null;
-        for (Path file : stream) {            
+        for (Path file : stream) {
             backupPath = file.resolveSibling(
                 file.getFileName().toString().replace(UNEXPLODED, BACKED_UP));
             explodeGS(file);
@@ -62,12 +76,16 @@ public class ScanbotSS {
             else
                 Files.delete(file);
         }
+    }
 
+    private void detect() throws Exception {
+        
+        DirectoryStream<Path> stream;
         String orientation;
         Result result; 
         Path target;        
         stream = Files.newDirectoryStream(scantray, "*" + UNDETECTED);
-        for (Path file : stream) {            
+        for (Path file : stream) {
             result = decode(file);            
             if (result != null) {
                 orientation = (String)result.getResultMetadata().
@@ -83,6 +101,70 @@ public class ScanbotSS {
             else
                 Files.delete(file);
         }
+    }
+
+    private void update() throws Exception {
+        
+        DirectoryStream<Path> scans = Files.newDirectoryStream(staging);
+        Path resolvedPath = locker,
+            unresolvedPath = locker.resolve("unresolved");        
+        if (scans.iterator().hasNext()) {
+            resolvedPath = makeRoom();
+        }
+        
+        boolean rotated = false, detected = false;
+        String[] tokens = null;
+        String base36ScanId = null;
+        scans = Files.newDirectoryStream(staging);
+        for (Path scan : scans) {
+
+            //base36ScanId_detected?_upright?
+            tokens = scan.getFileName().toString().split("_");
+            if (tokens.length != 3) {
+                Files.delete(scan);
+                continue;
+            }
+
+            base36ScanId = tokens[0];
+            detected = tokens[1].equals("1") ? true : false;
+            rotated = tokens[2].equals("1") ? true : false;
+            
+            Path target = null;
+            if (detected) {
+                target = resolvedPath.resolve(base36ScanId);
+                if (!updateScanId(base36ScanId)) continue;
+            } else {
+                target = unresolvedPath.resolve(base36ScanId);
+            }
+            
+            if (rotated) {
+                flip(scan, scan);
+            }
+            
+            resize(scan, target, 600, 800);
+            Files.delete(scan);
+        }
+    }
+    
+    private boolean updateScanId(String scanId) throws Exception {
+        URL updateScan = new URL("http", "www.gradians.com", 80, 
+            "update_scan_id?id="+scanId);
+        HttpURLConnection conn = (HttpURLConnection)updateScan.openConnection();
+        conn.setRequestMethod("GET");
+        conn.connect();
+        return 200 == conn.getResponseCode();
+    }
+    
+    private Path makeRoom() throws Exception {
+        Calendar rightNow = Calendar.getInstance();
+        Path dirPath = locker.resolve(
+            String.format("%s.%s.%s", rightNow.get(Calendar.DAY_OF_MONTH),
+            rightNow.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.ENGLISH),
+            rightNow.get(Calendar.YEAR)));
+        if (!Files.exists(dirPath)) {
+            Files.createDirectory(dirPath);
+        }
+        return dirPath;
     }
     
     private void clearTempFiles() throws Exception {
@@ -205,14 +287,16 @@ public class ScanbotSS {
     private void resize(Path src, Path target, int width, int height) 
         throws Exception { 
         String resize = String.format(CMD_RESIZE, 
-            src.getFileName(), width, height, target.getFileName());
-        execute(src.getParent(), resize);
+            bankroot.relativize(src), width, height, 
+            bankroot.relativize(target));
+        execute(bankroot, resize);
     }
     
     private void flip(Path src, Path target) throws Exception {
         String rotate = String.format(CMD_ROTATE,
-            src.getFileName(), target.getFileName());
-        execute(src.getParent(), rotate);
+            bankroot.relativize(src), 
+            bankroot.relativize(target));
+        execute(bankroot, rotate);
     }
     
     private int execute(Path workingDirPath, String command) throws Exception {        
@@ -235,7 +319,7 @@ public class ScanbotSS {
         return build.waitFor();
     }
     
-    private Path staging, scantray;
+    private Path bankroot, staging, scantray, locker;
     
     private final String TARGET = "%s_%s_%s";
     private final String IMG_FORMAT = "JPG";
