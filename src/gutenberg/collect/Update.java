@@ -61,14 +61,13 @@ public class Update extends Task {
         
         String hostport = System.getProperty("user.name").equals("gutenberg")?
             "www.gradians.com": "localhost:3000";        
-        URL updateScan = new URL(String.format("http://%s", hostport));
-        String params = String.format("/update_scan_id?id=%s",
+        URL updateScan = new URL(String.format("http://%s/update_scan_id", hostport));
+        String params = String.format("id=%s",
             URLEncoder.encode(scanId, charset));
         conn = (HttpURLConnection)updateScan.openConnection();
         conn.setDoOutput(true); // Triggers HTTP POST
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
         conn.setRequestProperty("Cache-Control", "no-cache");
-        conn.setRequestProperty("Cache-Length", "no-cache");
         conn.getOutputStream().write(params.getBytes(charset));
         conn.getOutputStream().close();
 
