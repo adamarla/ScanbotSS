@@ -71,12 +71,15 @@ public class Update extends Task {
         conn.getOutputStream().write(params.getBytes(charset));
         conn.getOutputStream().close();
 
-        byte[] goodReturn = "{\"status\":\"ok\"}".getBytes();
-        byte[] actualReturn = new byte[goodReturn.length];
-        while (conn.getInputStream().read(actualReturn) != -1) { }
-        conn.getInputStream().close();
-        return 200 == conn.getResponseCode() && 
-            Arrays.equals(goodReturn, actualReturn);
+        if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+            byte[] goodReturn = "{\"status\":\"ok\"}".getBytes();
+            byte[] actualReturn = new byte[goodReturn.length];            
+            while (conn.getInputStream().read(actualReturn) != -1) { }            
+            conn.getInputStream().close();            
+            return Arrays.equals(goodReturn, actualReturn);
+        } else {
+            return false;    
+        }        
     }    
 
     private String todaysFolder() {
