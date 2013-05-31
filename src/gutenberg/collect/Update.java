@@ -2,6 +2,8 @@ package gutenberg.collect;
 
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -37,6 +39,8 @@ public class Update extends Task {
                 Files.delete(file);
             else if (updateScanId(locker.relativize(target).toString()))
                 Files.move(file, target);
+            else
+                Files.delete(file);
         } else {
             target = undetectedPath.resolve(base36ScanId);
             if (Files.exists(target))
@@ -45,20 +49,33 @@ public class Update extends Task {
                 Files.move(file, target);                
         }        
     }
+        
     
-    private boolean updateScanId(String scanId) throws Exception {
+    @Override
+    protected void cleanup() throws Exception {
+        conn.disconnect();
+    }
+
+    private boolean updateScanId(String scanId) throws Exception {        
+        String charset = Charset.defaultCharset().name();
+        
         String hostport = System.getProperty("user.name").equals("gutenberg")?
-            "www.gradians.com": "localhost:3000";
-        URL updateScan = new URL(
-            String.format("http://%s/update_scan_id?id=%s",hostport, scanId));
+            "www.gradians.com": "localhost:3000";        
+        URL updateScan = new URL(String.format("http://%s", hostport));
+        String params = String.format("/update_scan_id?id=%s",
+            URLEncoder.encode(scanId, charset));
         conn = (HttpURLConnection)updateScan.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setDoOutput(true); // Triggers HTTP POST
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
         conn.setRequestProperty("Cache-Control", "no-cache");
-        conn.connect();
+        conn.setRequestProperty("Cache-Length", "no-cache");
+        conn.getOutputStream().write(params.getBytes(charset));
+        conn.getOutputStream().close();
+
         byte[] goodReturn = "{\"status\":\"ok\"}".getBytes();
         byte[] actualReturn = new byte[goodReturn.length];
-        conn.getInputStream().read(actualReturn);
+        while (conn.getInputStream().read(actualReturn) != -1) { }
+        conn.getInputStream().close();
         return 200 == conn.getResponseCode() && 
             Arrays.equals(goodReturn, actualReturn);
     }    

@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." default="jar">
+<project name="ScanbotSS" basedir="." default="jar">
     <!--Auto generated ant build file-->
     <property environment="env"/>
     <property name="project.base.dir" value="."/>
-    <property name="name" value="ScanbotSS"/>
     <property name="src" value="${project.base.dir}/src"/>
     <property name="build" value="${project.base.dir}/build"/>
     <property name="lib" value="${project.base.dir}/lib"/>
@@ -45,7 +44,7 @@
         </copy>
 	  </target>
 	  <target name="zip" depends="jar">
-	  	  <zip destfile="${project.base.dir}/ScanbotSS.zip">
+	  	  <zip destfile="${project.base.dir}/${ant.project.name}.zip">
 	  	  	  <fileset dir="${build}/lib"/>
 	  	  </zip>
 	  </target>
