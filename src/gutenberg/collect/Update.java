@@ -53,7 +53,7 @@ public class Update extends Task {
     
     @Override
     protected void cleanup() throws Exception {
-        conn.disconnect();
+        if (conn != null) conn.disconnect();
     }
 
     private boolean updateScanId(String scanId) throws Exception {        

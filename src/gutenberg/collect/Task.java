@@ -10,7 +10,7 @@ public abstract class Task {
     
     public static Task[] getTasks(Path bankroot) {
         Task[] tasks = new Task[4];
-        tasks[0] = new Backup(bankroot, UNEXPLODED);
+        tasks[0] = new Backup(bankroot, "");
         tasks[1] = new Explode(bankroot, UNEXPLODED);
         tasks[2] = new Detect(bankroot, UNDETECTED);
         tasks[3] = new Update(bankroot, "");

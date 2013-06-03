@@ -13,9 +13,13 @@ public class Backup extends Task {
 
     @Override
     protected void execute(Path file) throws Exception {
-        Path backupPath = file.resolveSibling(
-            file.getFileName().toString().replace(UNEXPLODED, BACKED_UP));
-        Files.copy(file, backupPath, StandardCopyOption.REPLACE_EXISTING);
+        Path backupPath = null;
+        String name = file.getFileName().toString();
+        if (name.endsWith(UNDETECTED) || name.endsWith(UNEXPLODED)) {
+            backupPath = file.resolveSibling(
+                file.getFileName().toString().replaceAll("\\.u.", BACKED_UP));
+            Files.copy(file, backupPath, StandardCopyOption.REPLACE_EXISTING);                
+        } 
     }
 
 }
