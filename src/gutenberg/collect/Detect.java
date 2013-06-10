@@ -12,7 +12,7 @@ import com.google.zxing.DecodeHintType;
 import com.google.zxing.LuminanceSource;
 import com.google.zxing.Reader;
 import com.google.zxing.Result;
-import com.google.zxing.ResultMetadataType;
+import com.google.zxing.ResultPoint;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.GlobalHistogramBinarizer;
 import com.google.zxing.common.HybridBinarizer;
@@ -29,16 +29,12 @@ public class Detect extends Task {
     @Override
     protected void execute(Path file) throws Exception {
         
-        String orientation;
         Result result; 
         Path target;
         
         result = decode(file);            
         if (result != null) {
-            orientation = (String)result.getResultMetadata().
-                get(ResultMetadataType.ORIENTATION);
             target = staging.resolve(result.getText().replace(" ",""));
-            if (orientation.equals("1")) flip(file, file);
         } else {
             target = staging.resolve(file.getFileName());
         }
@@ -80,8 +76,8 @@ public class Detect extends Task {
                 result = decode(subImg);
                 
                 if (result != null) {
-                    result.putMetadata(ResultMetadataType.ORIENTATION, 
-                        flipped ? "1" : "0");
+                    ResultPoint[] points = result.getResultPoints();                    
+                    if (points[0].getY() < points[1].getY()) flip(scan, scan);
                     break;
                 }            
             }
@@ -160,7 +156,6 @@ public class Detect extends Task {
         CMD_RESIZE = "convert %s -type TrueColor -resize %sx%s %s",
         CMD_ROTATE = "convert %s -type TrueColor -rotate 180 %s",
         IMG_FORMAT = "JPG";
-
 }
 
 class ZXingConfig {
