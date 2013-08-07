@@ -3,23 +3,30 @@ package gutenberg.collect;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 public abstract class Task {
     
-    public static Task[] getTasks(Path bankroot) {
-        Task[] tasks = new Task[4];
-        tasks[0] = new Backup(bankroot, "");
-        tasks[1] = new Explode(bankroot, UNEXPLODED);
-        tasks[2] = new Detect(bankroot, UNDETECTED);
-        tasks[3] = new Update(bankroot, "");
-        return tasks;
+    public static Task[] getTasks(boolean simulate) {
+        ArrayList<Task> tasks = new ArrayList<Task>();
+        //backup : copy *.ad, *.ae -> backup/
+        //explode: ghostscript to explode *.ue -> *.ud 
+        //detect : zxing to run detection on *.ud -> [*.re or *.ur]
+        //update : use http to update rails app and mv *.ud -> locker
+        tasks.add(new Backup());
+        tasks.add(new Explode());
+        tasks.add(new Detect());
+        if (!simulate) tasks.add(new Update());
+        
+        return tasks.toArray(new Task[0]);
     }
     
-    protected Task(Path bankroot, String filter) {
-        this.filter = filter;
-        this.bankroot = bankroot;
+    protected Task() {
+        this.bankroot = FileSystems.getDefault().getPath("/opt/gutenberg/bank");
+        this.workingDir = bankroot.resolve(SCANTRAY);
     }
     
     /**
@@ -28,16 +35,16 @@ public abstract class Task {
     protected void init() throws Exception { }
     
     public void run() throws Exception {
-        System.out.println("Started Task " + this.getClass().getName() + " ...");
         init();
         DirectoryStream<Path> stream = 
-            Files.newDirectoryStream(workingDir, "*" + filter);
+            Files.newDirectoryStream(workingDir, "*" + filter + "*");
         for (Path file : stream) {
             execute(file);
         }
         cleanup();
-        System.out.println("Completed Task " + this.getClass().getName() + " ...");
     }
+    
+    protected abstract void execute(Path file) throws Exception;
     
     /**
      * Any clean up code after loop goes here
@@ -64,15 +71,22 @@ public abstract class Task {
         return build.waitFor();
     }
     
-    protected abstract void execute(Path file) throws Exception;
-    
     
     protected boolean backup;
     protected Path bankroot, workingDir;
     protected String filter;
+    protected boolean simulate;
     
-    protected static final String SCANTRAY = "scantray",
-        LOCKER = "locker", STAGING = "staging";
-    protected static final String UNEXPLODED = ".ue", UNDETECTED = ".ud",
-        BACKED_UP = ".bk", CROPPED = ".33", WORKING = ".wk";
+    protected static final String 
+        SCANTRAY = "scantray",
+        LOCKER = "locker", 
+        BACKUP = "backup";
+    protected static final String 
+        AUTO_PROCESS = ".a",
+        AUTO_EXPLODE = ".ae", 
+        AUTO_DETECT = ".ad",
+        MANUAL_DETECT = ".md",
+        DETECTED = ".de",
+        CROPPED = ".cr", 
+        WORKING = ".wk";
 }

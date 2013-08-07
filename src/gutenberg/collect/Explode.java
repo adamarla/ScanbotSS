@@ -5,9 +5,8 @@ import java.nio.file.Path;
 
 public class Explode extends Task {
     
-    protected Explode(Path bankroot, String filter) {
-        super(bankroot, filter);
-        this.workingDir = bankroot.resolve(SCANTRAY);
+    protected Explode() {
+        this.filter = AUTO_EXPLODE;
     }
 
     @Override
@@ -16,10 +15,10 @@ public class Explode extends Task {
         Files.delete(file);
     }    
     
-    private void explodeGS(Path file) throws Exception {
+    private void explodeGS(Path file) throws Exception {        
         String gs = String.format(CMD_EXPLODE,
             file.getFileName().toString().split("\\.")[0], 
-            UNDETECTED, file.getFileName());
+            AUTO_DETECT, file.getFileName());
         exec(file.getParent(), gs);
     }
 

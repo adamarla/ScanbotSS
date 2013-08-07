@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 
 public class Driver {
 
@@ -14,23 +13,24 @@ public class Driver {
      */
     public static void main(String[] args) throws Exception {
         
-        Path bank = FileSystems.getDefault().getPath("/opt/gutenberg/bank");
-        Path semaphore = bank.resolve("semaphore");
+        Path semaphore = FileSystems.getDefault().
+                getPath("/opt/gutenberg/bank", "semaphore");
         try {
+            
             if (!Files.exists(semaphore))
                 Files.createFile(semaphore);
             else
                 return;
-            Task[] tasks = Task.getTasks(bank);
-            if (args.length == 0) //skip backup step
-                tasks = Arrays.copyOfRange(tasks, 1, tasks.length);            
+            
+            Task[] tasks = Task.getTasks(args[0].equals("simulate"));
             for (Task task: tasks) {
-                task.run();    
+                task.run(); System.out.println(task.getClass().toString());
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             Files.deleteIfExists(semaphore);
         }
+        
     }
 }

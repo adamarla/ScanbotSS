@@ -12,44 +12,31 @@ import java.util.Locale;
 
 public class Update extends Task {
 
-    public Update(Path bankroot, String filter) {
-        super(bankroot, filter);
-        this.workingDir = bankroot.resolve(STAGING);
-        this.locker = bankroot.resolve(LOCKER);
+    public Update() {
+        this.filter = DETECTED;
     }
     
     @Override
     protected void init() throws Exception {
-        this.detectedPath = locker.resolve(todaysFolder());
-        if (!Files.exists(detectedPath)) 
-            Files.createDirectory(detectedPath);
-        this.undetectedPath = locker.resolve("unresolved");
+        this.todaysFolder = getTodaysFolder();
     }
 
     @Override
     protected void execute(Path file) throws Exception {
         
-        String base36ScanId = file.getFileName().toString();
-        boolean detected = !base36ScanId.endsWith(UNDETECTED);
-
-        Path target = null;
-        if (detected) {
-            target = detectedPath.resolve(base36ScanId);
-            if (Files.exists(target))
-                Files.delete(file);
-            else if (updateScanId(locker.relativize(target).toString()))
-                Files.move(file, target);
-            else
-                Files.delete(file);
-        } else {
-            target = undetectedPath.resolve(base36ScanId);
-            if (Files.exists(target))
-                Files.delete(file);
-            else
-                Files.move(file, target);                
-        }        
-    }
+        if (!Files.exists(todaysFolder)) 
+            Files.createDirectory(todaysFolder);
         
+        String base36ScanId = file.getFileName().toString();        
+        Path target = todaysFolder.resolve(base36ScanId);
+        
+        if (Files.exists(target))
+            Files.delete(file);
+        else if (updateScanId(locker.relativize(target).toString()))
+            Files.move(file, target);
+        else
+            Files.delete(file);       
+    }        
     
     @Override
     protected void cleanup() throws Exception {
@@ -82,14 +69,14 @@ public class Update extends Task {
         }        
     }    
 
-    private String todaysFolder() {
+    private Path getTodaysFolder() {
         Calendar rightNow = Calendar.getInstance();
-        return String.format("%s.%s.%s", rightNow.get(Calendar.DAY_OF_MONTH),
+        return locker.resolve(String.format("%s.%s.%s", rightNow.get(Calendar.DAY_OF_MONTH),
             rightNow.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.ENGLISH),
-            rightNow.get(Calendar.YEAR));
+            rightNow.get(Calendar.YEAR)));
     }
     
     private HttpURLConnection conn;
-    private Path locker, undetectedPath, detectedPath;
+    private Path locker, todaysFolder;
 
 }

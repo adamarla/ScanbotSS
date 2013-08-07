@@ -20,10 +20,8 @@ import com.google.zxing.qrcode.QRCodeReader;
 
 public class Detect extends Task {
 
-    public Detect(Path bankroot, String filter) {
-        super(bankroot, filter);
-        this.workingDir = bankroot.resolve(SCANTRAY);
-        this.staging = bankroot.resolve(STAGING);
+    public Detect() {
+        this.filter = AUTO_DETECT;
     }
 
     @Override
@@ -32,11 +30,12 @@ public class Detect extends Task {
         Result result; 
         Path target;
         
-        result = decode(file);            
+        result = decode(file);
         if (result != null) {
-            target = staging.resolve(result.getText().replace(" ",""));
+            target = workingDir.resolve(result.getText() + DETECTED);
         } else {
-            target = staging.resolve(file.getFileName());
+            target = workingDir.resolve(file.getFileName().toString().
+                    replace(AUTO_DETECT, MANUAL_DETECT));
         }
         
         if (!Files.exists(target))
@@ -51,10 +50,15 @@ public class Detect extends Task {
         Result result = null;
         Path subImgPath, workingImgPath;
         
+        img = ImageIO.read(scan.toFile());
+        if (img.getWidth() > img.getHeight()) {            
+            rotate(scan, scan, PI_BY_2);
+            img = ImageIO.read(scan.toFile());
+        }
+        
         boolean flipped = false;
         while (true) {
             
-            img = ImageIO.read(scan.toFile());
             int third = (int)(img.getWidth()/3.0);            
             subImg = img.getSubimage(2*third, 0, third, (int)img.getHeight());
             
@@ -77,7 +81,7 @@ public class Detect extends Task {
                 
                 if (result != null) {
                     ResultPoint[] points = result.getResultPoints();                    
-                    if (points[0].getY() < points[1].getY()) flip(scan, scan);
+                    if (points[0].getY() < points[1].getY()) rotate(scan, scan, PI);
                     break;
                 }            
             }
@@ -86,7 +90,7 @@ public class Detect extends Task {
                 if (flipped) {
                     break;//give up
                 } else {
-                    flip(scan, scan);
+                    rotate(scan, scan, PI);
                     flipped = true;
                 }
             } else {
@@ -144,18 +148,17 @@ public class Detect extends Task {
         exec(bankroot, resize);
     }
     
-    private void flip(Path src, Path target) throws Exception {
+    private void rotate(Path src, Path target, String degrees) throws Exception {
         String rotate = String.format(CMD_ROTATE,
-            bankroot.relativize(src), 
+            bankroot.relativize(src), degrees,
             bankroot.relativize(target));
         exec(bankroot, rotate);
     }    
 
-    private Path staging;
     private final String 
         CMD_RESIZE = "convert %s -type TrueColor -resize %sx%s %s",
-        CMD_ROTATE = "convert %s -type TrueColor -rotate 180 %s",
-        IMG_FORMAT = "JPG";
+        CMD_ROTATE = "convert %s -type TrueColor -rotate %s %s",
+        IMG_FORMAT = "JPG", PI = "180", PI_BY_2 = "90";
 }
 
 class ZXingConfig {
