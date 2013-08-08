@@ -12,10 +12,11 @@ public abstract class Task {
     
     public static Task[] getTasks(boolean simulate) {
         ArrayList<Task> tasks = new ArrayList<Task>();
+        //fetch  : fetch new email and copy out attachment
         //backup : copy *.ad, *.ae -> backup/
-        //explode: ghostscript to explode *.ue -> *.ud 
-        //detect : zxing to run detection on *.ud -> [*.re or *.ur]
-        //update : use http to update rails app and mv *.ud -> locker
+        //explode: ghostscript to explode *.ae -> *.ad 
+        //detect : zxing to run detection on *.ad -> [*.de or *.md]
+        //update : use http to update rails app and mv *.de -> locker
         tasks.add(new Backup());
         tasks.add(new Explode());
         tasks.add(new Detect());
