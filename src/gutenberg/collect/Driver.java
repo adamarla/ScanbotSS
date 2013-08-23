@@ -22,7 +22,8 @@ public class Driver {
             else
                 return;
             
-            Task[] tasks = Task.getTasks(args[0].equals("simulate"));
+            boolean simulate = args.length == 0 ? false : args[0].equals("simulate");
+            Task[] tasks = Task.getTasks(simulate);
             for (Task task: tasks) {
                 task.run(); System.out.println(task.getClass().toString());
             }

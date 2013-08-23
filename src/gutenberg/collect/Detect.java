@@ -32,9 +32,9 @@ public class Detect extends Task {
         
         result = decode(file);
         if (result != null) {
-            target = workingDir.resolve(result.getText() + DETECTED);
+            target = bankroot.resolve(SCANTRAY).resolve(result.getText() + DETECTED);
         } else {
-            target = workingDir.resolve(file.getFileName().toString().
+            target = bankroot.resolve(SCANTRAY).resolve(file.getFileName().toString().
                     replace(AUTO_DETECT, MANUAL_DETECT));
         }
         

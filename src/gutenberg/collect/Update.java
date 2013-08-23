@@ -32,7 +32,7 @@ public class Update extends Task {
         
         if (Files.exists(target))
             Files.delete(file);
-        else if (updateScanId(locker.relativize(target).toString()))
+        else if (updateScanId(bankroot.resolve(LOCKER).relativize(target).toString()))
             Files.move(file, target);
         else
             Files.delete(file);       
@@ -71,12 +71,13 @@ public class Update extends Task {
 
     private Path getTodaysFolder() {
         Calendar rightNow = Calendar.getInstance();
-        return locker.resolve(String.format("%s.%s.%s", rightNow.get(Calendar.DAY_OF_MONTH),
-            rightNow.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.ENGLISH),
-            rightNow.get(Calendar.YEAR)));
+        return bankroot.resolve(LOCKER).resolve(String.format("%s.%s.%s", 
+                rightNow.get(Calendar.DAY_OF_MONTH),
+                rightNow.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.ENGLISH),
+                rightNow.get(Calendar.YEAR)));
     }
     
     private HttpURLConnection conn;
-    private Path locker, todaysFolder;
+    private Path todaysFolder;
 
 }

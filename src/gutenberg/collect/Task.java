@@ -27,7 +27,6 @@ public abstract class Task {
     
     protected Task() {
         this.bankroot = FileSystems.getDefault().getPath("/opt/gutenberg/bank");
-        this.workingDir = bankroot.resolve(SCANTRAY);
     }
     
     /**
@@ -38,7 +37,7 @@ public abstract class Task {
     public void run() throws Exception {
         init();
         DirectoryStream<Path> stream = 
-            Files.newDirectoryStream(workingDir, "*" + filter + "*");
+            Files.newDirectoryStream(bankroot.resolve(SCANTRAY), "*" + filter + "*");
         for (Path file : stream) {
             execute(file);
         }
@@ -74,7 +73,7 @@ public abstract class Task {
     
     
     protected boolean backup;
-    protected Path bankroot, workingDir;
+    protected Path bankroot;
     protected String filter;
     protected boolean simulate;
     
