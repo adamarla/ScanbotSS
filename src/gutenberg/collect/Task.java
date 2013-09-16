@@ -77,6 +77,8 @@ public abstract class Task {
     protected String filter;
     protected boolean simulate;
     
+    protected final String GRADED_RESPONSE_ID = "GR";
+    
     protected static final String 
         SCANTRAY = "scantray",
         LOCKER = "locker", 

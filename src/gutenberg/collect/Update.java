@@ -27,15 +27,25 @@ public class Update extends Task {
         if (!Files.exists(todaysFolder)) 
             Files.createDirectory(todaysFolder);
         
-        String base36ScanId = file.getFileName().toString();        
-        Path target = todaysFolder.resolve(base36ScanId);
-        
+        Path target = null;
+        String scanId = null, scanType = null;
+        String name = file.getFileName().toString().split("\\.")[0];
+        if (name.startsWith(GRADED_RESPONSE_ID)) {
+            scanId = name.split("_")[1];
+            target = todaysFolder.resolve(name.split("_")[2]);
+            scanType = "plainpaper";
+        } else {
+            scanId = name;
+            target = todaysFolder.resolve(scanId);
+            scanType = "worksheet";
+        }
+                
         if (Files.exists(target))
             Files.delete(file);
-        else if (updateScanId(bankroot.resolve(LOCKER).relativize(target).toString()))
+        else if (updateScanId(bankroot.resolve(LOCKER).relativize(target).toString(), scanType))
             Files.move(file, target);
         else
-            Files.delete(file);       
+            Files.delete(file);
     }        
     
     @Override
@@ -43,14 +53,14 @@ public class Update extends Task {
         if (conn != null) conn.disconnect();
     }
 
-    private boolean updateScanId(String scanId) throws Exception {        
+    private boolean updateScanId(String scanId, String scanType) throws Exception {        
         String charset = Charset.defaultCharset().name();
         
         String hostport = System.getProperty("user.name").equals("gutenberg")?
             "www.gradians.com": "localhost:3000";        
         URL updateScan = new URL(String.format("http://%s/update_scan_id", hostport));
-        String params = String.format("id=%s",
-            URLEncoder.encode(scanId, charset));
+        String params = String.format("id=%s&type=%s",
+            URLEncoder.encode(scanId, charset), scanType);
         conn = (HttpURLConnection)updateScan.openConnection();
         conn.setDoOutput(true); // Triggers HTTP POST
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);

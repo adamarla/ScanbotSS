@@ -27,20 +27,19 @@ public class Detect extends Task {
     @Override
     protected void execute(Path file) throws Exception {
         
-        Result result; 
-        Path target;
-        
-        result = decode(file);
-        if (result != null) {
-            target = bankroot.resolve(SCANTRAY).resolve(result.getText() + DETECTED);
+        String source = file.getFileName().toString();
+        String target = null;
+        Path targetFile = null;
+        if (source.startsWith(GRADED_RESPONSE_ID)) {
+            target = source.replace(AUTO_DETECT, DETECTED);
         } else {
-            target = bankroot.resolve(SCANTRAY).resolve(file.getFileName().toString().
-                    replace(AUTO_DETECT, MANUAL_DETECT));
-        }
+            Result result = decode(file);
+            target = result != null ? result.getText() + DETECTED :
+                    source.replace(AUTO_DETECT, MANUAL_DETECT);            
+        }        
+        targetFile = bankroot.resolve(SCANTRAY).resolve(target);
         
-        if (!Files.exists(target))
-            resize(file, target, 600, 800);
-        
+        if (!Files.exists(targetFile)) resize(file, targetFile, WIDTH, HEIGHT);        
         Files.delete(file);
     }
 
@@ -159,6 +158,7 @@ public class Detect extends Task {
         CMD_RESIZE = "convert %s -type TrueColor -resize %sx%s %s",
         CMD_ROTATE = "convert %s -type TrueColor -rotate %s %s",
         IMG_FORMAT = "JPG", PI = "180", PI_BY_2 = "90";
+    private final int WIDTH = 600, HEIGHT = 800;
 }
 
 class ZXingConfig {
