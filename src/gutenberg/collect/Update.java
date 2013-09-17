@@ -28,21 +28,20 @@ public class Update extends Task {
             Files.createDirectory(todaysFolder);
         
         Path target = null;
-        String scanId = null, scanType = null;
-        String name = file.getFileName().toString().split("\\.")[0];
-        if (name.startsWith(GRADED_RESPONSE_ID)) {
-            scanId = name.split("_")[1];
-            target = todaysFolder.resolve(name.split("_")[2]);
+        String scanType = null;
+        String scanId = file.getFileName().toString().split("\\.")[0];
+        if (scanId.startsWith(GRADED_RESPONSE_ID)) {
+            target = todaysFolder.resolve(scanId.split("_")[2]);
             scanType = "plainpaper";
         } else {
-            scanId = name;
             target = todaysFolder.resolve(scanId);
             scanType = "worksheet";
         }
                 
         if (Files.exists(target))
             Files.delete(file);
-        else if (updateScanId(bankroot.resolve(LOCKER).relativize(target).toString(), scanType))
+        else if (updateScanId(scanId, scanType,
+                bankroot.resolve(LOCKER).relativize(todaysFolder).toString()))
             Files.move(file, target);
         else
             Files.delete(file);
@@ -53,14 +52,14 @@ public class Update extends Task {
         if (conn != null) conn.disconnect();
     }
 
-    private boolean updateScanId(String scanId, String scanType) throws Exception {        
+    private boolean updateScanId(String scanId, String scanType, String scanPath) throws Exception {        
         String charset = Charset.defaultCharset().name();
         
         String hostport = System.getProperty("user.name").equals("gutenberg")?
             "www.gradians.com": "localhost:3000";        
         URL updateScan = new URL(String.format("http://%s/update_scan_id", hostport));
-        String params = String.format("id=%s&type=%s",
-            URLEncoder.encode(scanId, charset), scanType);
+        String params = String.format("id=%s&type=%s&path=%s",
+            URLEncoder.encode(scanId, charset), scanType, scanPath);
         conn = (HttpURLConnection)updateScan.openConnection();
         conn.setDoOutput(true); // Triggers HTTP POST
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
