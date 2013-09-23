@@ -17,7 +17,7 @@ public class Explode extends Task {
     
     private void explodeGS(Path file) throws Exception {        
         String gs = String.format(CMD_EXPLODE,
-            file.getFileName().toString().split("\\.")[0], 
+            this.getName(file), 
             AUTO_DETECT, file.getFileName());
         exec(file.getParent(), gs);
     }

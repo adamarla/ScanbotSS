@@ -32,13 +32,16 @@ public abstract class Task {
     /**
      * Any initialization code before loop goes here
      */
-    protected void init() throws Exception { }
+    protected void init() throws Exception {
+        System.out.println(this.getClass().getSimpleName() + " =========");
+    }
     
     public void run() throws Exception {
         init();
         DirectoryStream<Path> stream = 
             Files.newDirectoryStream(bankroot.resolve(SCANTRAY), "*" + filter + "*");
         for (Path file : stream) {
+            System.out.println(file.getFileName());
             execute(file);
         }
         cleanup();
@@ -49,7 +52,9 @@ public abstract class Task {
     /**
      * Any clean up code after loop goes here
      */
-    protected void cleanup() throws Exception { }
+    protected void cleanup() throws Exception {
+        System.out.println("========================================");
+    }
     
     protected int exec(Path workingDirPath, String command) throws Exception {        
         String[] tokens = command.split(" ");
@@ -71,13 +76,14 @@ public abstract class Task {
         return build.waitFor();
     }
     
+    protected String getName(Path file) {
+        return file.getFileName().toString().split("\\.")[0];
+    }
     
     protected boolean backup;
     protected Path bankroot;
     protected String filter;
     protected boolean simulate;
-    
-    protected final String GRADED_RESPONSE_ID = "GR";
     
     protected static final String 
         SCANTRAY = "scantray",
@@ -90,5 +96,6 @@ public abstract class Task {
         MANUAL_DETECT = ".md",
         DETECTED = ".de",
         CROPPED = ".cr", 
-        WORKING = ".wk";
+        WORKING = ".wk",
+        SEP = "_";
 }

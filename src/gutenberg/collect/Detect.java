@@ -27,18 +27,24 @@ public class Detect extends Task {
     @Override
     protected void execute(Path file) throws Exception {
         
-        String source = file.getFileName().toString();
-        String target = null;
-        Path targetFile = null;
-        if (source.startsWith(GRADED_RESPONSE_ID)) {
-            target = source.replace(AUTO_DETECT, DETECTED);
-        } else {
-            Result result = decode(file);
-            target = result != null ? result.getText() + DETECTED :
-                    source.replace(AUTO_DETECT, MANUAL_DETECT);            
+        BufferedImage img = ImageIO.read(file.toFile());
+        if (img.getWidth() > img.getHeight()) {
+            rotate(file, file, PI_BY_2);
         }        
-        targetFile = bankroot.resolve(SCANTRAY).resolve(target);
         
+        String targetName = null;
+        String name = getName(file);
+        String[] tokens = name.split(SEP);
+        if (tokens[1].equals(BLANK_CODE)) {
+            Result result = decode(file);
+            targetName = result != null ?
+                    tokens[0] + SEP + result.getText() + SEP + tokens[2] + DETECTED :
+                    tokens[2] + MANUAL_DETECT;
+        } else {
+            targetName = name + DETECTED;
+        }
+        
+        Path targetFile = bankroot.resolve(SCANTRAY).resolve(targetName);        
         if (!Files.exists(targetFile)) resize(file, targetFile, WIDTH, HEIGHT);        
         Files.delete(file);
     }
@@ -50,7 +56,7 @@ public class Detect extends Task {
         Path subImgPath, workingImgPath;
         
         img = ImageIO.read(scan.toFile());
-        if (img.getWidth() > img.getHeight()) {            
+        if (img.getWidth() > img.getHeight()) {
             rotate(scan, scan, PI_BY_2);
             img = ImageIO.read(scan.toFile());
         }
@@ -99,6 +105,7 @@ public class Detect extends Task {
         
         Files.delete(subImgPath);
         Files.delete(workingImgPath);
+        
         return result;
     }
     
@@ -139,25 +146,25 @@ public class Detect extends Task {
         return result;
     }    
     
-    private void resize(Path src, Path target, int width, int height) 
+    private boolean resize(Path src, Path target, int width, int height) 
         throws Exception { 
         String resize = String.format(CMD_RESIZE, 
             bankroot.relativize(src), width, height, 
             bankroot.relativize(target));
-        exec(bankroot, resize);
+        return exec(bankroot, resize) == 0;
     }
     
-    private void rotate(Path src, Path target, String degrees) throws Exception {
+    private boolean rotate(Path src, Path target, String degrees) throws Exception {
         String rotate = String.format(CMD_ROTATE,
             bankroot.relativize(src), degrees,
             bankroot.relativize(target));
-        exec(bankroot, rotate);
+        return exec(bankroot, rotate) == 0;
     }    
 
     private final String 
         CMD_RESIZE = "convert %s -type TrueColor -resize %sx%s %s",
         CMD_ROTATE = "convert %s -type TrueColor -rotate %s %s",
-        IMG_FORMAT = "JPG", PI = "180", PI_BY_2 = "90";
+        IMG_FORMAT = "JPG", PI = "180", PI_BY_2 = "90", BLANK_CODE = "0";
     private final int WIDTH = 600, HEIGHT = 800;
 }
 

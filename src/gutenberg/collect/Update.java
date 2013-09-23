@@ -18,6 +18,7 @@ public class Update extends Task {
     
     @Override
     protected void init() throws Exception {
+        super.init();
         this.todaysFolder = getTodaysFolder();
     }
 
@@ -27,21 +28,16 @@ public class Update extends Task {
         if (!Files.exists(todaysFolder)) 
             Files.createDirectory(todaysFolder);
         
-        Path target = null;
-        String scanType = null;
-        String scanId = file.getFileName().toString().split("\\.")[0];
-        if (scanId.startsWith(GRADED_RESPONSE_ID)) {
-            target = todaysFolder.resolve(scanId.split("_")[2]);
-            scanType = "plainpaper";
-        } else {
-            target = todaysFolder.resolve(scanId);
-            scanType = "worksheet";
-        }
-                
+        String name = getName(file);
+        String[] tokens = name.split(SEP);
+        String scanType = tokens[0];
+        String scanId = tokens[1];
+        String scanPath = todaysFolder.getFileName().resolve(tokens[2]).toString();
+        Path target = todaysFolder.resolve(tokens[2]);
+
         if (Files.exists(target))
             Files.delete(file);
-        else if (updateScanId(scanId, scanType,
-                bankroot.resolve(LOCKER).relativize(todaysFolder).toString()))
+        else if (updateScanId(scanId, scanType, scanPath))
             Files.move(file, target);
         else
             Files.delete(file);
@@ -49,6 +45,7 @@ public class Update extends Task {
     
     @Override
     protected void cleanup() throws Exception {
+        super.cleanup();
         if (conn != null) conn.disconnect();
     }
 
