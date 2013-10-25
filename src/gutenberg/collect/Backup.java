@@ -5,7 +5,8 @@ import java.nio.file.Path;
 
 public class Backup extends Task {
     
-    public Backup() {
+    public Backup(String dir) {
+        super(dir);
         this.filter = AUTO_PROCESS;
     }
     

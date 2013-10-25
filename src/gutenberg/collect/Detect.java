@@ -20,7 +20,8 @@ import com.google.zxing.qrcode.QRCodeReader;
 
 public class Detect extends Task {
 
-    public Detect() {
+    public Detect(String dir) {
+        super(dir);
         this.filter = AUTO_DETECT;
     }
 
@@ -44,7 +45,7 @@ public class Detect extends Task {
             targetName = name + DETECTED;
         }
         
-        Path targetFile = bankroot.resolve(SCANTRAY).resolve(targetName);        
+        Path targetFile = file.resolveSibling(targetName);        
         if (!Files.exists(targetFile)) resize(file, targetFile, WIDTH, HEIGHT);        
         Files.delete(file);
     }

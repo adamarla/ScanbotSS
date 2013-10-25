@@ -10,23 +10,23 @@ import java.util.ArrayList;
 
 public abstract class Task {
     
-    public static Task[] getTasks(boolean simulate) {
+    public static Task[] getTasks(boolean simulation, String dir, String hostPort) {
         ArrayList<Task> tasks = new ArrayList<Task>();
-        //fetch  : fetch new email and copy out attachment
-        //backup : copy *.ad, *.ae -> backup/
-        //explode: ghostscript to explode *.ae -> *.ad 
-        //detect : zxing to run detection on *.ad -> [*.de or *.md]
-        //update : use http to update rails app and mv *.de -> locker
-        tasks.add(new Backup());
-        tasks.add(new Explode());
-        tasks.add(new Detect());
-        if (!simulate) tasks.add(new Update());
-        
+        //fetch  : fetch new email and copy out attachment - TODO
+        //backup : copy incoming -> backup (always)
+        //explode: ghostscript to explode PDFs (if needed)
+        //detect : zxing to run detection on images (if needed)
+        //update : http POST to update rails app and move scans to locker
+        tasks.add(new Backup(dir));
+        tasks.add(new Explode(dir));
+        tasks.add(new Detect(dir));
+        if (!simulation) tasks.add(new Update(dir, hostPort));
         return tasks.toArray(new Task[0]);
     }
     
-    protected Task() {
+    protected Task(String inTray) {
         this.bankroot = FileSystems.getDefault().getPath("/opt/gutenberg/bank");
+        this.inTray = inTray;
     }
     
     /**
@@ -39,7 +39,7 @@ public abstract class Task {
     public void run() throws Exception {
         init();
         DirectoryStream<Path> stream = 
-            Files.newDirectoryStream(bankroot.resolve(SCANTRAY), "*" + filter + "*");
+            Files.newDirectoryStream(bankroot.resolve(inTray), "*" + filter + "*");
         for (Path file : stream) {
             System.out.println(file.getFileName());
             execute(file);
@@ -80,21 +80,22 @@ public abstract class Task {
         return file.getFileName().toString().split("\\.")[0];
     }
     
-    protected boolean backup;
+    private String inTray;
+    
     protected Path bankroot;
     protected String filter;
     protected boolean simulate;
     
     protected static final String 
-        SCANTRAY = "scantray",
         LOCKER = "locker", 
-        BACKUP = "backup";
-    protected static final String 
+        BACKUP = "backup",
         AUTO_PROCESS = ".a",
         AUTO_EXPLODE = ".ae", 
         AUTO_DETECT = ".ad",
         MANUAL_DETECT = ".md",
-        DETECTED = ".de",
+        DETECTED = ".d",
+        DETECTED_SELF = ".ds",
+        DETECTED_COPY = ".dc",
         CROPPED = ".cr", 
         WORKING = ".wk",
         SEP = "_";

@@ -5,7 +5,8 @@ import java.nio.file.Path;
 
 public class Explode extends Task {
     
-    protected Explode() {
+    protected Explode(String dir) {
+        super(dir);
         this.filter = AUTO_EXPLODE;
     }
 

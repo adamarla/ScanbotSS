@@ -12,8 +12,10 @@ import java.util.Locale;
 
 public class Update extends Task {
 
-    public Update() {
+    public Update(String dir, String hostPort) {
+        super(dir);
         this.filter = DETECTED;
+        this.hostPort = hostPort;
     }
     
     @Override
@@ -52,9 +54,7 @@ public class Update extends Task {
     private boolean updateScanId(String scanId, String scanType, String scanPath) throws Exception {        
         String charset = Charset.defaultCharset().name();
         
-        String hostport = System.getProperty("user.name").equals("gutenberg")?
-            "www.gradians.com": "localhost:3000";        
-        URL updateScan = new URL(String.format("http://%s/update_scan_id", hostport));
+        URL updateScan = new URL(String.format("http://%s/update_scan_id", hostPort));
         String params = String.format("id=%s&type=%s&path=%s",
             URLEncoder.encode(scanId, charset), scanType, scanPath);
         conn = (HttpURLConnection)updateScan.openConnection();
@@ -83,6 +83,7 @@ public class Update extends Task {
                 rightNow.get(Calendar.YEAR)));
     }
     
+    private String hostPort;
     private HttpURLConnection conn;
     private Path todaysFolder;
 
