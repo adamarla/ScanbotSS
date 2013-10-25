@@ -33,21 +33,11 @@
             <classpath refid="class.path"/>
         </javac>
     </target>
-	  <target depends="compile.src" name="jar">
-	  	  <jar destfile="${build}/lib/ScanbotSS.jar">
-	  	  	  <fileset dir="${build}/classes"/>
-	  	  </jar>
-        <copy toDir="${build}/lib" failonerror="false">
-            <fileset dir="${lib}">
-                <include name="*.jar"/>
-            </fileset>        	
-        </copy>
-	  </target>
-	  <target name="zip" depends="jar">
-	  	  <zip destfile="${project.base.dir}/${ant.project.name}.zip">
-	  	  	  <fileset dir="${build}/lib"/>
-	  	  </zip>
-	  </target>
+	<target depends="compile.src" name="jar">
+	    <jar destfile="${build}/lib/ScanbotSS.jar">
+	  	    <fileset dir="${build}/classes"/>
+	  	</jar>
+	</target>
     <target depends="pre.compile.test" name="echo.classpath.problem" unless="jars.ok">
         <echo message="The class path is not set right! Please make sure zxing jars are in the classpath"/>
     </target>
