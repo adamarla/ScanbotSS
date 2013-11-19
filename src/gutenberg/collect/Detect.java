@@ -2,6 +2,7 @@ package gutenberg.collect;
 import java.awt.image.BufferedImage;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Hashtable;
 
 import javax.imageio.ImageIO;
@@ -54,37 +55,31 @@ public class Detect extends Task {
 
         BufferedImage img = null, subImg = null;        
         Result result = null;
-        Path subImgPath, workingImgPath;
+        Path workingImgPath = scan.resolveSibling(scan.getFileName() + WORKING);
         
-        img = ImageIO.read(scan.toFile());
+        img = ImageIO.read(scan.toFile());        
         if (img.getWidth() > img.getHeight()) {
             rotate(scan, scan, PI_BY_2);
             img = ImageIO.read(scan.toFile());
         }
         
+        Files.copy(scan, workingImgPath, StandardCopyOption.REPLACE_EXISTING);
         boolean flipped = false;
         while (true) {
-            
-            int third = (int)(img.getWidth()/3.0);            
-            subImg = img.getSubimage(2*third, 0, third, (int)img.getHeight());
-            
-            subImgPath = scan.resolveSibling(scan.getFileName() + CROPPED);
-            workingImgPath = scan.resolveSibling(scan.getFileName() + WORKING);            
-            ImageIO.write(subImg, IMG_FORMAT, Files.newOutputStream(subImgPath));
-            
-            //{original, 150dpi, 200dpi, 125dpi, 100dpi}
-            int[] widths = {third, 425, 566, 333, 283};
+            //{300dpi (orig), 150dpi, 200dpi, 125dpi, 100dpi, 75dpi}
+            int[] widths = {img.getWidth(), 1275, 1700, 1000, 827, 638};
             for (int width : widths) {
-                int height;
-                if (width != third) {
-                    height = (int)(subImg.getHeight()*1.0/subImg.getWidth()*width);
-                    resize(subImgPath, workingImgPath, width, height);
-                } else {
-                    ImageIO.write(subImg, IMG_FORMAT, Files.newOutputStream(workingImgPath));
-                }
-                subImg = ImageIO.read(Files.newInputStream(workingImgPath));
-                result = decode(subImg);
                 
+                if (width != img.getWidth()) {
+                    int height = (int)(img.getHeight()*1.0/img.getWidth()*width);
+                    resize(scan, workingImgPath, width, height);
+                }
+                
+                subImg = ImageIO.read(Files.newInputStream(workingImgPath));
+                int third = (int)(subImg.getWidth()/3.0);
+                subImg = subImg.getSubimage(2*third, 0, third, (int)subImg.getHeight());
+                
+                result = decode(subImg);                
                 if (result != null) {
                     ResultPoint[] points = result.getResultPoints();                    
                     if (points[0].getY() < points[1].getY()) rotate(scan, scan, PI);
@@ -97,6 +92,7 @@ public class Detect extends Task {
                     break;//give up
                 } else {
                     rotate(scan, scan, PI);
+                    Files.copy(scan, workingImgPath, StandardCopyOption.REPLACE_EXISTING);
                     flipped = true;
                 }
             } else {
@@ -104,9 +100,7 @@ public class Detect extends Task {
             }
         }
         
-        Files.delete(subImgPath);
-        Files.delete(workingImgPath);
-        
+        Files.delete(workingImgPath);        
         return result;
     }
     
@@ -165,7 +159,7 @@ public class Detect extends Task {
     private final String 
         CMD_RESIZE = "convert %s -type TrueColor -resize %sx%s %s",
         CMD_ROTATE = "convert %s -type TrueColor -rotate %s %s",
-        IMG_FORMAT = "JPG", PI = "180", PI_BY_2 = "90", BLANK_CODE = "0";
+        PI = "180", PI_BY_2 = "90", BLANK_CODE = "0";
     private final int WIDTH = 600, HEIGHT = 800;
 }
 

@@ -58,6 +58,7 @@ public class Driver {
                 for (Task task: tasks) task.run();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println(e.getMessage());
         } finally {
             Files.deleteIfExists(semaphore);

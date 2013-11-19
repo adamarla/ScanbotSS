@@ -93,9 +93,7 @@ public abstract class Task {
         AUTO_EXPLODE = ".ae", 
         AUTO_DETECT = ".ad",
         MANUAL_DETECT = ".md",
-        DETECTED = ".d",
-        DETECTED_SELF = ".ds",
-        DETECTED_COPY = ".dc",
+        DETECTED = ".de",
         CROPPED = ".cr", 
         WORKING = ".wk",
         SEP = "_";
