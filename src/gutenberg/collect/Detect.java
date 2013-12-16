@@ -37,12 +37,12 @@ public class Detect extends Task {
         String targetName = null;
         String name = getName(file);
         String[] tokens = name.split(SEP);
-        if (tokens[1].equals(BLANK_CODE)) {
+        if (tokens[1].equals(BLANK_CODE)) {//PDF uploaded via website
             Result result = decode(file);
             targetName = result != null ?
                     tokens[0] + SEP + result.getText() + SEP + tokens[2] + DETECTED :
                     tokens[2] + MANUAL_DETECT;
-        } else {
+        } else {                           //Scan uploaded via mobile app
             targetName = name + DETECTED;
         }
         
@@ -53,7 +53,7 @@ public class Detect extends Task {
 
     private Result decode(Path scan) throws Exception {
 
-        BufferedImage img = null, subImg = null;        
+        BufferedImage img = null, resampledImg = null;
         Result result = null;
         Path workingImgPath = scan.resolveSibling(scan.getFileName() + WORKING);
         
@@ -73,18 +73,30 @@ public class Detect extends Task {
                 if (width != img.getWidth()) {
                     int height = (int)(img.getHeight()*1.0/img.getWidth()*width);
                     resize(scan, workingImgPath, width, height);
+                }                
+                resampledImg = ImageIO.read(Files.newInputStream(workingImgPath));
+                
+                int third = (int)(resampledImg.getWidth()/3.0);
+                int fourth = (int)(resampledImg.getWidth()/4.0);                
+                int[][] subImgConfs = new int[][] {
+                    {0, (int)resampledImg.getHeight()-fourth, fourth, fourth},
+                    {2*third, 0, third, (int)resampledImg.getHeight()}
+                };
+                
+                BufferedImage subImg = null;
+                for (int[] subImgConf : subImgConfs) {
+                    subImg = resampledImg.getSubimage(subImgConf[0], subImgConf[1], 
+                            subImgConf[2], subImgConf[3]);
+                    result = decode(subImg);
+                    if (result != null) {
+                        break;
+                    }
                 }
-                
-                subImg = ImageIO.read(Files.newInputStream(workingImgPath));
-                int third = (int)(subImg.getWidth()/3.0);
-                subImg = subImg.getSubimage(2*third, 0, third, (int)subImg.getHeight());
-                
-                result = decode(subImg);                
                 if (result != null) {
                     ResultPoint[] points = result.getResultPoints();                    
                     if (points[0].getY() < points[1].getY()) rotate(scan, scan, PI);
                     break;
-                }            
+                }
             }
             
             if (result == null) {
