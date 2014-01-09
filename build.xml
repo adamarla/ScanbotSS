@@ -27,6 +27,9 @@
         <!--Print out the availabilities-->
         <echo message="ZXing Availability= ${zxing.available}"/>
     </target>
+    <target depends="pre.compile.test" name="echo.classpath.problem" unless="jars.ok">
+        <echo message="The class path is not set right! Please make sure zxing jars are in the classpath"/>
+    </target>
     <target depends="pre.compile.test" name="compile.src" if="jars.ok">
         <javac debug="on" memoryMaximumSize="256m" memoryInitialSize="256m" fork="true" 
         	destdir="${build}/classes" srcdir="${src}">
@@ -36,11 +39,12 @@
 	<target depends="compile.src" name="jar">
 	    <jar destfile="${build}/lib/ScanbotSS.jar">
 	  	    <fileset dir="${build}/classes"/>
-	  	</jar>
+            <manifest>
+                <attribute name="Main-Class" value="gutenberg.collect.Driver"/>
+                <attribute name="Class-Path" value="core.jar javase.jar commons-cli-1.2.jar"/>
+            </manifest>	  	
+        </jar>
 	</target>
-    <target depends="pre.compile.test" name="echo.classpath.problem" unless="jars.ok">
-        <echo message="The class path is not set right! Please make sure zxing jars are in the classpath"/>
-    </target>
     <target name="clean">
         <delete dir="${build}"/>
     </target>
