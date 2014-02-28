@@ -30,7 +30,7 @@ public class Update extends Task {
         if (!Files.exists(todaysFolder)) 
             Files.createDirectory(todaysFolder);
         
-        String name = getName(file);
+        String name = file.getFileName().toString().replace(".de", "");
         String[] tokens = name.split(SEP);
         String scanType = tokens[0];
         String scanId = tokens[1];
