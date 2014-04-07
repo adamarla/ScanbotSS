@@ -34,20 +34,31 @@ public class Detect extends Task {
             rotate(file, file, PI_BY_2);
         }        
         
+        Path targetFile = null;
         String targetName = null;
         String name = getName(file);
         String[] tokens = name.split(SEP);
         if (tokens[1].equals(BLANK_CODE)) {//PDF uploaded via website
             Result result = decode(file);
-            targetName = result != null ?
-                    tokens[0] + SEP + result.getText() + SEP + tokens[2] + DETECTED :
-                    tokens[2] + MANUAL_DETECT;
+            if (result == null) {
+                targetName = tokens[2] + MANUAL_DETECT;
+                targetFile = file.resolveSibling(targetName);
+            } else if (result.getText().compareToIgnoreCase(BLANK_CODE) != 0 &&
+                       result.getText().compareToIgnoreCase("attachment") != 0) {
+                targetName = tokens[0] + SEP + 
+                        result.getText() + SEP + 
+                        tokens[2] + DETECTED;
+                targetFile = file.resolveSibling(targetName);
+                
+                if (Files.exists(targetFile)) {
+                    targetFile = null;
+                }
+            }
         } else {                           //Scan uploaded via mobile app
             targetName = name + DETECTED;
         }
         
-        Path targetFile = file.resolveSibling(targetName);        
-        if (!Files.exists(targetFile)) resize(file, targetFile, WIDTH, HEIGHT);        
+        if (targetFile != null) resize(file, targetFile, WIDTH, HEIGHT);        
         Files.delete(file);
     }
 
