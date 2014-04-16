@@ -21,9 +21,6 @@
     <target depends="init" name="pre.compile.test">
         <!--Test the classpath for the availability of necesary classes-->
         <available classpathref="class.path" property="zxing.available" classname="com.google.zxing.Result"/>
-        <condition property="jars.ok">
-            <isset property="axis2.available"/>
-        </condition>
         <!--Print out the availabilities-->
         <echo message="ZXing Availability= ${zxing.available}"/>
     </target>
