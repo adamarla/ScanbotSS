@@ -32,33 +32,36 @@ public class Detect extends Task {
         BufferedImage img = ImageIO.read(file.toFile());
         if (img.getWidth() > img.getHeight()) {
             rotate(file, file, PI_BY_2);
-        }        
-        
-        Path targetFile = null;
-        String targetName = null;
-        String name = getName(file);
-        String[] tokens = name.split(SEP);
-        if (tokens[1].equals(BLANK_CODE)) {//PDF uploaded via website
-            Result result = decode(file);
-            if (result == null) {
-                targetName = tokens[2] + MANUAL_DETECT;
-                targetFile = file.resolveSibling(targetName);
-            } else if (result.getText().compareToIgnoreCase(BLANK_CODE) != 0 &&
-                       result.getText().compareToIgnoreCase("attachment") != 0) {
-                targetName = tokens[0] + SEP + 
-                        result.getText() + SEP + 
-                        tokens[2] + DETECTED;
-                targetFile = file.resolveSibling(targetName);
-                
-                if (Files.exists(targetFile)) {
-                    targetFile = null;
-                }
-            }
-        } else {                           //Scan uploaded via mobile app
-            targetName = name + DETECTED;
         }
         
-        if (targetFile != null) resize(file, targetFile, WIDTH, HEIGHT);        
+        String targetName = null;
+        String name = getName(file);
+        
+        if (name.startsWith("QR")) {   // QR Code            
+            String signature = name.split(SEP)[2];
+            Result result = decode(file);
+            String code = result == null ? "CND" : result.getText();
+            
+            switch (code.toUpperCase()) {
+            case "CND":         //Could Not Detect
+                targetName = String.format("%s%s", signature, MANUAL_DETECT);
+                break;
+            case BLANK_CODE:    //Blank Page
+            case "ATTACHMENT":  //Reference Sheet
+                break;
+            default:            //Noteworthy QRCode
+                targetName = String.format("QR_%s_%s%s", code, signature, DETECTED);
+            }
+            
+        } else {                        // Graded Response ID
+            targetName = name + DETECTED;
+        }
+
+        if (targetName != null) {
+            Path targetFile = file.resolveSibling(targetName);            
+            if (!Files.exists(targetFile))
+                resize(file, targetFile, WIDTH, HEIGHT);
+        }
         Files.delete(file);
     }
 
@@ -84,8 +87,10 @@ public class Detect extends Task {
                 if (width != img.getWidth()) {
                     int height = (int)(img.getHeight()*1.0/img.getWidth()*width);
                     resize(scan, workingImgPath, width, height);
-                }                
-                resampledImg = ImageIO.read(Files.newInputStream(workingImgPath));
+                    resampledImg = ImageIO.read(Files.newInputStream(workingImgPath));
+                } else {
+                    resampledImg = img;
+                }
                 
                 int third = (int)(resampledImg.getWidth()/3.0);
                 int fourth = (int)(resampledImg.getWidth()/4.0);                
