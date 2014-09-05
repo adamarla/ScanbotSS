@@ -36,10 +36,12 @@ public class Update extends Task {
         String scanId = tokens[1];
         String scanPath = todaysFolder.getFileName().resolve(tokens[2]).toString();
         Path target = todaysFolder.resolve(tokens[2]);
+        String studentId = tokens[3];
+        String vers = tokens[4];
 
         if (Files.exists(target))
             Files.delete(file);
-        else if (updateScanId(scanId, scanType, scanPath))
+        else if (updateScanId(scanId, scanType, scanPath, studentId, vers))
             Files.move(file, target);
         else
             Files.delete(file);
@@ -51,12 +53,13 @@ public class Update extends Task {
         if (conn != null) conn.disconnect();
     }
 
-    private boolean updateScanId(String scanId, String scanType, String scanPath) throws Exception {        
+    private boolean updateScanId(String scanId, String scanType, String scanPath, 
+            String studentId, String vers) throws Exception {        
         String charset = Charset.defaultCharset().name();
         
         URL updateScan = new URL(String.format("http://%s/update_scan_id", hostPort));
-        String params = String.format("id=%s&type=%s&path=%s",
-            URLEncoder.encode(scanId, charset), scanType, scanPath);
+        String params = String.format("id=%s&type=%s&path=%s&student_id=%s&vers=%s",
+            URLEncoder.encode(scanId, charset), scanType, scanPath, studentId, vers);
         conn = (HttpURLConnection)updateScan.openConnection();
         conn.setDoOutput(true); // Triggers HTTP POST
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + charset);
